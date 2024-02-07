@@ -15,7 +15,6 @@
 const ReactDOMServerIntegrationUtils = require('./utils/ReactDOMServerIntegrationTestUtils');
 
 let React;
-let ReactDOM;
 let ReactDOMClient;
 let ReactDOMServer;
 let ReactTestUtils;
@@ -33,9 +32,7 @@ describe('ReactDOMServerIntegration - Untrusted URLs', () => {
   }
 
   function initModules() {
-    jest.resetModules();
     React = require('react');
-    ReactDOM = require('react-dom');
     ReactDOMClient = require('react-dom/client');
     ReactDOMServer = require('react-dom/server');
     ReactTestUtils = require('react-dom/test-utils');
@@ -43,7 +40,7 @@ describe('ReactDOMServerIntegration - Untrusted URLs', () => {
 
     // Make them available to the helpers.
     return {
-      ReactDOM,
+      ReactDOMClient,
       ReactDOMServer,
       ReactTestUtils,
     };
@@ -199,12 +196,10 @@ describe('ReactDOMServerIntegration - Untrusted URLs - disableJavaScriptURLs', (
   }
 
   function initModules() {
-    jest.resetModules();
     const ReactFeatureFlags = require('shared/ReactFeatureFlags');
     ReactFeatureFlags.disableJavaScriptURLs = true;
 
     React = require('react');
-    ReactDOM = require('react-dom');
     ReactDOMClient = require('react-dom/client');
     ReactDOMServer = require('react-dom/server');
     ReactTestUtils = require('react-dom/test-utils');
@@ -212,7 +207,7 @@ describe('ReactDOMServerIntegration - Untrusted URLs - disableJavaScriptURLs', (
 
     // Make them available to the helpers.
     return {
-      ReactDOM,
+      ReactDOMClient,
       ReactDOMServer,
       ReactTestUtils,
     };

@@ -20,7 +20,6 @@ describe('ReactDOMComponent', () => {
   let act;
 
   beforeEach(() => {
-    jest.resetModules();
     React = require('react');
     ReactDOM = require('react-dom');
     ReactDOMClient = require('react-dom/client');
@@ -638,6 +637,16 @@ describe('ReactDOMComponent', () => {
             'or pass null to href instead of an empty string.',
         );
         expect(node.hasAttribute('href')).toBe(false);
+      });
+
+      it('should allow an empty href attribute on anchors', async () => {
+        const container = document.createElement('div');
+        const root = ReactDOMClient.createRoot(container);
+        await act(() => {
+          root.render(<a href="" />);
+        });
+        const node = container.firstChild;
+        expect(node.getAttribute('href')).toBe('');
       });
 
       it('should allow an empty action attribute', async () => {

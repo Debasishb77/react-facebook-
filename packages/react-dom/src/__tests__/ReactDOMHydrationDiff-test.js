@@ -21,11 +21,10 @@ describe('ReactDOMServerHydration', () => {
   let container;
 
   beforeEach(() => {
-    jest.resetModules();
     React = require('react');
     ReactDOMClient = require('react-dom/client');
     ReactDOMServer = require('react-dom/server');
-    act = React.unstable_act;
+    act = React.act;
 
     console.error = jest.fn();
     container = document.createElement('div');

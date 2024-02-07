@@ -27,12 +27,11 @@ function clearLog() {
 beforeEach(() => {
   prevActGlobal = global.IS_REACT_ACT_ENVIRONMENT;
   global.IS_REACT_ACT_ENVIRONMENT = true;
-  jest.resetModules();
   jest.unmock('scheduler');
   yields = [];
   React = require('react');
   ReactDOMClient = require('react-dom/client');
-  act = React.unstable_act;
+  act = React.act;
   container = document.createElement('div');
   document.body.appendChild(container);
 });

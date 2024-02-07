@@ -13,13 +13,6 @@ import {checkKeyStringCoercion} from 'shared/CheckStringCoercion';
 
 import ReactCurrentOwner from './ReactCurrentOwner';
 
-const RESERVED_PROPS = {
-  key: true,
-  ref: true,
-  __self: true,
-  __source: true,
-};
-
 let specialPropKeyWarningShown,
   specialPropRefWarningShown,
   didWarnAboutStringRefs;
@@ -202,160 +195,6 @@ function ReactElement(type, key, ref, self, source, owner, props) {
 }
 
 /**
- * https://github.com/reactjs/rfcs/pull/107
- * @param {*} type
- * @param {object} props
- * @param {string} key
- */
-export function jsx(type, config, maybeKey) {
-  let propName;
-
-  // Reserved names are extracted
-  const props = {};
-
-  let key = null;
-  let ref = null;
-
-  // Currently, key can be spread in as a prop. This causes a potential
-  // issue if key is also explicitly declared (ie. <div {...props} key="Hi" />
-  // or <div key="Hi" {...props} /> ). We want to deprecate key spread,
-  // but as an intermediary step, we will use jsxDEV for everything except
-  // <div {...props} key="Hi" />, because we aren't currently able to tell if
-  // key is explicitly declared to be undefined or not.
-  if (maybeKey !== undefined) {
-    if (__DEV__) {
-      checkKeyStringCoercion(maybeKey);
-    }
-    key = '' + maybeKey;
-  }
-
-  if (hasValidKey(config)) {
-    if (__DEV__) {
-      checkKeyStringCoercion(config.key);
-    }
-    key = '' + config.key;
-  }
-
-  if (hasValidRef(config)) {
-    ref = config.ref;
-  }
-
-  // Remaining properties are added to a new props object
-  for (propName in config) {
-    if (
-      hasOwnProperty.call(config, propName) &&
-      !RESERVED_PROPS.hasOwnProperty(propName)
-    ) {
-      props[propName] = config[propName];
-    }
-  }
-
-  // Resolve default props
-  if (type && type.defaultProps) {
-    const defaultProps = type.defaultProps;
-    for (propName in defaultProps) {
-      if (props[propName] === undefined) {
-        props[propName] = defaultProps[propName];
-      }
-    }
-  }
-
-  return ReactElement(
-    type,
-    key,
-    ref,
-    undefined,
-    undefined,
-    ReactCurrentOwner.current,
-    props,
-  );
-}
-
-/**
- * https://github.com/reactjs/rfcs/pull/107
- * @param {*} type
- * @param {object} props
- * @param {string} key
- */
-export function jsxDEV(type, config, maybeKey, source, self) {
-  let propName;
-
-  // Reserved names are extracted
-  const props = {};
-
-  let key = null;
-  let ref = null;
-
-  // Currently, key can be spread in as a prop. This causes a potential
-  // issue if key is also explicitly declared (ie. <div {...props} key="Hi" />
-  // or <div key="Hi" {...props} /> ). We want to deprecate key spread,
-  // but as an intermediary step, we will use jsxDEV for everything except
-  // <div {...props} key="Hi" />, because we aren't currently able to tell if
-  // key is explicitly declared to be undefined or not.
-  if (maybeKey !== undefined) {
-    if (__DEV__) {
-      checkKeyStringCoercion(maybeKey);
-    }
-    key = '' + maybeKey;
-  }
-
-  if (hasValidKey(config)) {
-    if (__DEV__) {
-      checkKeyStringCoercion(config.key);
-    }
-    key = '' + config.key;
-  }
-
-  if (hasValidRef(config)) {
-    ref = config.ref;
-    warnIfStringRefCannotBeAutoConverted(config);
-  }
-
-  // Remaining properties are added to a new props object
-  for (propName in config) {
-    if (
-      hasOwnProperty.call(config, propName) &&
-      !RESERVED_PROPS.hasOwnProperty(propName)
-    ) {
-      props[propName] = config[propName];
-    }
-  }
-
-  // Resolve default props
-  if (type && type.defaultProps) {
-    const defaultProps = type.defaultProps;
-    for (propName in defaultProps) {
-      if (props[propName] === undefined) {
-        props[propName] = defaultProps[propName];
-      }
-    }
-  }
-
-  if (key || ref) {
-    const displayName =
-      typeof type === 'function'
-        ? type.displayName || type.name || 'Unknown'
-        : type;
-    if (key) {
-      defineKeyPropWarningGetter(props, displayName);
-    }
-    if (ref) {
-      defineRefPropWarningGetter(props, displayName);
-    }
-  }
-
-  return ReactElement(
-    type,
-    key,
-    ref,
-    self,
-    source,
-    ReactCurrentOwner.current,
-    props,
-  );
-}
-
-/**
  * Create and return a new ReactElement of the given type.
  * See https://reactjs.org/docs/react-api.html#createelement
  */
@@ -391,7 +230,18 @@ export function createElement(type, config, children) {
     for (propName in config) {
       if (
         hasOwnProperty.call(config, propName) &&
-        !RESERVED_PROPS.hasOwnProperty(propName)
+        // Skip over reserved prop names
+        propName !== 'key' &&
+        // TODO: `ref` will no longer be reserved in the next major
+        propName !== 'ref' &&
+        // ...and maybe these, too, though we currently rely on them for
+        // warnings and debug information in dev. Need to decide if we're OK
+        // with dropping them. In the jsx() runtime it's not an issue because
+        // the data gets passed as separate arguments instead of props, but
+        // it would be nice to stop relying on them entirely so we can drop
+        // them from the internal Fiber field.
+        propName !== '__self' &&
+        propName !== '__source'
       ) {
         props[propName] = config[propName];
       }
@@ -529,7 +379,18 @@ export function cloneElement(element, config, children) {
     for (propName in config) {
       if (
         hasOwnProperty.call(config, propName) &&
-        !RESERVED_PROPS.hasOwnProperty(propName)
+        // Skip over reserved prop names
+        propName !== 'key' &&
+        // TODO: `ref` will no longer be reserved in the next major
+        propName !== 'ref' &&
+        // ...and maybe these, too, though we currently rely on them for
+        // warnings and debug information in dev. Need to decide if we're OK
+        // with dropping them. In the jsx() runtime it's not an issue because
+        // the data gets passed as separate arguments instead of props, but
+        // it would be nice to stop relying on them entirely so we can drop
+        // them from the internal Fiber field.
+        propName !== '__self' &&
+        propName !== '__source'
       ) {
         if (config[propName] === undefined && defaultProps !== undefined) {
           // Resolve default props
